@@ -5,6 +5,8 @@ import plots
 
 #def 
 
+
+
 def load_all_movies(filename):
     """
     Load and parse 'plot.list.gz'. Yields each consecutive movie as a dictionary:
@@ -59,6 +61,8 @@ def lineReducer(line):
             lineDict[word] = 1
     return lineDict
 
+
+
 def dictReducer(mainDict, nextDict):
     #print nextDict
     for key, value in nextDict.iteritems():
@@ -67,6 +71,38 @@ def dictReducer(mainDict, nextDict):
         else:
             mainDict[key] = value
     return mainDict
+
+
+
+
+def generateProbabilityFunctionForData(dataset):
+
+    def probabilityFunction(wi, xi):
+
+        def probabilityFunctionFilter(movie):
+
+            if xi==0:
+                if wi in movie['word_map']:
+                    return False
+                else:
+                    return True
+
+            else:
+
+                if wi in movie['word_map']:
+                    if movie['word_map'][wi] == xi:
+                        return True
+                else:
+                    return False
+
+        filteredDataSet = filter(probabilityFunctionFilter, dataset)
+
+        if len(filteredDataSet) == 0:
+            return .00000000001
+        else:
+            return len(filteredDataSet) / len(dataset)
+
+    return probabilityFunction
 
 # def reducer(lineMap):
 #     lineDict = {}
@@ -83,8 +119,8 @@ if __name__ == '__main__':
 
     #print('min year = {}, max year = {}'.format(min_year, max_year))
 
-    #first = load_all_movies("./plot.list.gz").next()
-    #print first['summary']
+    first = load_all_movies("./plot.list.gz").next()
+    print first['summary']
 
     # lineDictList = []
     # for line in first['summary'].split('\n'):
@@ -106,12 +142,33 @@ if __name__ == '__main__':
 
 
 
-    #print first['word_map']
+    print first['word_map']
  
     # print(len(all_movies))
     # print(all_movies[0])
 
+    #print all_movies[0]['word_map']
+
+    #2A
     plots.plotDecadeHistogram([x["year"] for x in all_movies], 1930, 2010, 'plot2A.png', 'Histogram of P(Y) across the entire dataset', 'Decade', 'Probability')
+    
+    #2B
     plots.plotDecadeHistogram([x["year"] for x in filter(lambda x: 'radio' in x['word_map'], all_movies)], 1930, 2010, 'plot2A.png', 'Histogram of P(Y|Xradio > 0)', 'Decade', 'Probability')
+
+    #2C
+    plots.plotDecadeHistogram([x["year"] for x in filter(lambda x: 'beaver' in x['word_map'], all_movies)], 1930, 2010, 'plot2A.png', 'Histogram of P(Y|Xbeaver > 0)', 'Decade', 'Probability')
+
+    # for movie in moviesOf60s:
+    # decadeWordBag = reduce(dictReducer, lineDictList, {})
+
+    #returns f(wi, xi)
+    decades = {1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010}
+    probabilityFunctionForDecade = {}
+    for decade in decades:
+        dataForDecade = filter(lambda x : x["year"] == decade, all_movies)
+        probabilityFunctionForDecade[decade] = generateProbabilityFunctionForData(dataForDecade)
+
+
+
 
     # => 379451
