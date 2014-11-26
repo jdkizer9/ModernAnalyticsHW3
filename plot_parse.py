@@ -72,37 +72,112 @@ def dictReducer(mainDict, nextDict):
             mainDict[key] = value
     return mainDict
 
-
-
+dirlect = .000001
+maxProb = .999999
 
 def generateProbabilityFunctionForData(dataset):
 
-    def probabilityFunction(wi, xi):
 
-        def probabilityFunctionFilter(movie):
-
-            if xi==0:
-                if wi in movie['word_map']:
-                    return False
-                else:
-                    return True
-
+    #get bag of words for entire data set
+    #initialize bag of words
+    # each word has a dictionary containing the number of times the word is present and the number of movies voting for it
+    wordDictionary = reduce(dictReducer, lineDictList, {})
+    datasetLength = len(dataset)
+    bagOfWords = {key:{} for key in wordDictionary.iterkeys()}
+    for movie in dataset:
+        for word in bagOfWords.iterkeys():
+            if word in movie['word_map']:
+                value = movie['word_map'][word]
             else:
+                value = 0
 
-                if wi in movie['word_map']:
-                    if movie['word_map'][wi] == xi:
-                        return True
-                else:
-                    return False
+            if value in bagOfWords[word]:
+                bagOfWords[word][value] += 1
+            else
+                bagOfWords[word][value] = 1
 
-        filteredDataSet = filter(probabilityFunctionFilter, dataset)
 
-        if len(filteredDataSet) == 0:
-            return .00000000001
+    #function returns #votes for #times the word shows up in the plot summary
+    #divided by the total number of entries in the dataset
+
+    #note that if the word didnt exist in the original bag of words we 
+    #return a probability of 1 for xi=0, otherwise very small probability
+
+    def probabilityFunction(wi, xi):
+        if wi in bagOfWords:
+            if xi in wi:
+                return wi[xi]/datasetLength
+            else:
+                return dirlect
         else:
-            return len(filteredDataSet) / len(dataset)
+            if xi == 0:
+                return maxProb
+            else:
+                return dirlect
 
     return probabilityFunction
+
+
+
+    # #have movies vote
+
+    # def probabilityFunction(wi, xi):
+
+    #     def probabilityFunctionFilter(movie):
+
+    #         if xi==0:
+    #             if wi in movie['word_map']:
+    #                 return False
+    #             else:
+    #                 return True
+
+    #         else:
+
+    #             if wi in movie['word_map']:
+    #                 if movie['word_map'][wi] == xi:
+    #                     return True
+    #             else:
+    #                 return False
+
+    #     filteredDataSet = filter(probabilityFunctionFilter, dataset)
+
+    #     if len(filteredDataSet) == 0:
+    #         return .00000000001
+    #     else:
+    #         return len(filteredDataSet) / len(dataset)
+
+    # return probabilityFunction
+
+
+
+# def generateProbabilityFunctionForData(dataset):
+
+#     def probabilityFunction(wi, xi):
+
+#         def probabilityFunctionFilter(movie):
+
+#             if xi==0:
+#                 if wi in movie['word_map']:
+#                     return False
+#                 else:
+#                     return True
+
+#             else:
+
+#                 if wi in movie['word_map']:
+#                     if movie['word_map'][wi] == xi:
+#                         return True
+#                 else:
+#                     return False
+
+#         filteredDataSet = filter(probabilityFunctionFilter, dataset)
+
+#         if len(filteredDataSet) == 0:
+#             return .00000000001
+#         else:
+#             return len(filteredDataSet) / len(dataset)
+
+#     return probabilityFunction
 
 # def reducer(lineMap):
 #     lineDict = {}
