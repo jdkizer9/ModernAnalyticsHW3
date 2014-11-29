@@ -2,11 +2,14 @@ import gzip
 import re
 
 import plots
+import random
+import string
+from math import log as log
 
 #def 
 
 
-
+moviesDict = {}
 def load_all_movies(filename):
     """
     Load and parse 'plot.list.gz'. Yields each consecutive movie as a dictionary:
@@ -20,6 +23,11 @@ def load_all_movies(filename):
     assert "plot.list.gz" in filename # Or whatever you called it
     current_movie = None
     movie_regexp = re.compile("MV: ((.*?) \(([0-9]+).*\)(.*))")
+
+    titlesToMatch = ['Finding Nemo', 'The Matrix', 'Gone with the Wind', 'Harry Potter and the Goblet of Fire', 'Avatar']
+    title_regexps = [re.compile('{}$'.format(title)) for title in titlesToMatch]
+
+
     skipped = 0
     for i,line in enumerate(gzip.open(filename)):
         if line.startswith("MV"):
@@ -39,6 +47,18 @@ def load_all_movies(filename):
                                  'episode': episode,
                                  "summary": [],
                                  'word_map': {}}
+
+                for j,regexp in enumerate(title_regexps):
+                    if regexp.match(title):
+                        #print 'matched {}'.format(titlesToMatch[j])
+                        moviesDict[titlesToMatch[j]] = current_movie
+
+
+                
+
+                # if i%10000 == 0:
+                #     print title
+
             except:
                 skipped += 1
                 # print 'Line {} was skipped'.format(i)
@@ -81,27 +101,33 @@ def generateProbabilityFunctionForData(dataset):
     #get bag of words for entire data set
     #initialize bag of words
     # each word has a dictionary containing the number of times the word is present and the number of movies voting for it
-    wordDictionary = reduce(dictReducer, lineDictList, {})
+    wordDictionary = reduce(dictReducer, [movie['word_map'] for movie in dataset], {})
     datasetLength = len(dataset)
+    #generate the bag of words for this decade
     bagOfWords = {key:{} for key in wordDictionary.iterkeys()}
+
+    #for each movie in the dataset, vote for the number of times the word is used in the summary
     for movie in dataset:
         for word in bagOfWords.iterkeys():
+
+            #determine how many times the word is used
             if word in movie['word_map']:
                 value = movie['word_map'][word]
             else:
                 value = 0
 
+            #vote in the decade-wide bag of words
             if value in bagOfWords[word]:
                 bagOfWords[word][value] += 1
-            else
+            else:
                 bagOfWords[word][value] = 1
 
-
+    #print bagOfWords['the']
     #function returns #votes for #times the word shows up in the plot summary
     #divided by the total number of entries in the dataset
 
     #note that if the word didnt exist in the original bag of words we 
-    #return a probability of 1 for xi=0, otherwise very small probability
+    #return very high probability for xi=0, otherwise very small probability
 
     def probabilityFunction(wi, xi):
         if wi in bagOfWords:
@@ -195,7 +221,7 @@ if __name__ == '__main__':
     #print('min year = {}, max year = {}'.format(min_year, max_year))
 
     first = load_all_movies("./plot.list.gz").next()
-    print first['summary']
+    #print first['summary']
 
     # lineDictList = []
     # for line in first['summary'].split('\n'):
@@ -217,31 +243,116 @@ if __name__ == '__main__':
 
 
 
-    print first['word_map']
+    #print first['word_map']
  
     # print(len(all_movies))
     # print(all_movies[0])
 
     #print all_movies[0]['word_map']
 
-    #2A
-    plots.plotDecadeHistogram([x["year"] for x in all_movies], 1930, 2010, 'plot2A.png', 'Histogram of P(Y) across the entire dataset', 'Decade', 'Probability')
+    # #2A
+    # plots.plotDecadeHistogram([x["year"] for x in all_movies], 1930, 2010, 'plot2A.png', 'Histogram of P(Y) across the entire dataset', 'Decade', 'Probability')
     
-    #2B
-    plots.plotDecadeHistogram([x["year"] for x in filter(lambda x: 'radio' in x['word_map'], all_movies)], 1930, 2010, 'plot2A.png', 'Histogram of P(Y|Xradio > 0)', 'Decade', 'Probability')
+    # #2B
+    # plots.plotDecadeHistogram([x["year"] for x in filter(lambda x: 'radio' in x['word_map'], all_movies)], 1930, 2010, 'plot2B.png', 'Histogram of P(Y|Xradio > 0)', 'Decade', 'Probability')
 
-    #2C
-    plots.plotDecadeHistogram([x["year"] for x in filter(lambda x: 'beaver' in x['word_map'], all_movies)], 1930, 2010, 'plot2A.png', 'Histogram of P(Y|Xbeaver > 0)', 'Decade', 'Probability')
+    # #2C
+    # plots.plotDecadeHistogram([x["year"] for x in filter(lambda x: 'beaver' in x['word_map'], all_movies)], 1930, 2010, 'plot2C.png', 'Histogram of P(Y|Xbeaver > 0)', 'Decade', 'Probability')
 
-    # for movie in moviesOf60s:
-    # decadeWordBag = reduce(dictReducer, lineDictList, {})
+    # #2D
+    # plots.plotDecadeHistogram([x["year"] for x in filter(lambda x: 'the' in x['word_map'], all_movies)], 1930, 2010, 'plot2D.png', 'Histogram of P(Y|Xthe > 0)', 'Decade', 'Probability')
+
+    #generate balanced dataset
+    decades = [1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010]
+    balanced_movies = []
+    for decade in decades:
+        decade_data = [movie for movie in all_movies if movie['year']==decade]
+        if(len(decade_data) < 6000):
+            print 'Decade {} contains fewer than 6000 movies'.format(decade)
+        decade_subset = random.sample(decade_data, 6000)
+        balanced_movies.extend(decade_subset)
+
+    # print 'The balanced data contains {} movies'.format(len(balanced_movies)) 
+    
+    # #2E
+    # plots.plotDecadeHistogram([x["year"] for x in filter(lambda x: 'radio' in x['word_map'], balanced_movies)], 1930, 2010, 'plot2E.png', 'Histogram of P(Y|Xradio > 0) (Balanced Movies)', 'Decade', 'Probability')
+
+    # #2F
+    # plots.plotDecadeHistogram([x["year"] for x in filter(lambda x: 'beaver' in x['word_map'], balanced_movies)], 1930, 2010, 'plot2F.png', 'Histogram of P(Y|Xbeaver > 0) (Balanced Movies)', 'Decade', 'Probability')
+
+    # #2G
+    # plots.plotDecadeHistogram([x["year"] for x in filter(lambda x: 'the' in x['word_map'], balanced_movies)], 1930, 2010, 'plot2G.png', 'Histogram of P(Y|Xthe > 0) (Balanced Movies)', 'Decade', 'Probability')
+
+    #print moviesDict
 
     #returns f(wi, xi)
-    decades = {1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010}
     probabilityFunctionForDecade = {}
     for decade in decades:
-        dataForDecade = filter(lambda x : x["year"] == decade, all_movies)
-        probabilityFunctionForDecade[decade] = generateProbabilityFunctionForData(dataForDecade)
+        movies_for_decade = filter(lambda x : x["year"] == decade, balanced_movies)
+        probabilityFunctionForDecade[decade] = generateProbabilityFunctionForData(movies_for_decade)
+
+
+    bagOfWordsList = []
+    for movie in balanced_movies:
+        bagOfWordsList.extend(movie['word_map'].keys())
+
+    #this is the bag of words for the balanced set of movies
+    bagOfWords = set(bagOfWordsList)
+
+    def createFeatureVectorFromWordMap(word_map):
+        feature_vector = word_map.copy()
+
+        print 'Computing feature vector from word map'
+        print 'word map'
+        print word_map
+        for word in bagOfWords:
+            if word not in feature_vector:
+                feature_vector[word] = 0
+
+        print 'feature vector'
+        print feature_vector
+        return feature_vector
+
+
+    def computeProbabilityForDecadeAndWordMap(decade, word_map):
+
+        featureVector = createFeatureVectorFromWordMap(word_map)
+        probabilityFunction = probabilityFunctionForDecade[decade]
+
+        def probabilityReducer(accumulatedLogProbabilty, feature):
+            #print feature
+            #return accumulatedLogProbabilty + log()
+            return 0
+        
+        #probability = reduce(probabilityReducer, featureVector.iteritems, 0)
+        probability = 0
+        return probability
+
+
+
+    movie = moviesDict[0]
+    decade = 1930
+
+    print '*****************************'
+    print 'Computing probability for {}'.format(movie['title'])
+    probability = computeProbabilityForDecadeAndWordMap(decade, movie['word_map'])
+    print '{}: {}'.format(decade, probability)
+
+
+
+    # for movie in moviesDict.itervalues():
+    #     print '*****************************'
+    #     print 'Computing probabilities for {}'.format(movie['title'])
+
+    #     for decade in decades:
+    #         probability = computeProbabilityForDecadeAndWordMap(decade, movie['word_map'])
+    #         print '{}: {}'.format(decade, probability)
+
+
+
+
+
+    
 
 
 
