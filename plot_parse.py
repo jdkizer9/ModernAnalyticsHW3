@@ -330,7 +330,7 @@ if __name__ == '__main__':
 
 
 
-    movie = moviesDict[0]
+    movie = moviesDict[moviesDict.keys()[0]]
     decade = 1930
 
     print '*****************************'
