@@ -74,7 +74,7 @@ def load_all_movies(filename):
 def lineReducer(line):
     lineDict = {}
     for word in line.split():
-        word = word.lower()
+        word = word.translate(None, string.punctuation).lower()
         if word in lineDict:
             lineDict[word] += 1
         else:
@@ -131,8 +131,13 @@ def generateProbabilityFunctionForData(dataset):
 
     def probabilityFunction(wi, xi):
         if wi in bagOfWords:
-            if xi in wi:
-                return wi[xi]/datasetLength
+            if xi in bagOfWords[wi]:
+                if bagOfWords[wi][xi] == 0:
+                    return dirlect
+                else:
+                    probability = float(bagOfWords[wi][xi])/float(datasetLength)
+                    #print 'computed probability: {}'.format(probability)
+                    return probability
             else:
                 return dirlect
         else:
@@ -302,15 +307,15 @@ if __name__ == '__main__':
     def createFeatureVectorFromWordMap(word_map):
         feature_vector = word_map.copy()
 
-        print 'Computing feature vector from word map'
-        print 'word map'
-        print word_map
+        #print 'Computing feature vector from word map'
+        #print 'word map'
+        #print word_map
         for word in bagOfWords:
             if word not in feature_vector:
                 feature_vector[word] = 0
 
-        print 'feature vector'
-        print feature_vector
+        #print 'feature vector'
+        #print feature_vector
         return feature_vector
 
 
@@ -321,11 +326,13 @@ if __name__ == '__main__':
 
         def probabilityReducer(accumulatedLogProbabilty, feature):
             #print feature
-            #return accumulatedLogProbabilty + log()
-            return 0
+            probability = probabilityFunction(feature[0], feature[1])
+            #print probability
+            return accumulatedLogProbabilty + log(probability)
+            #return 0
         
-        #probability = reduce(probabilityReducer, featureVector.iteritems, 0)
-        probability = 0
+        probability = reduce(probabilityReducer, featureVector.iteritems(), 0)
+        #probability = 0
         return probability
 
 
@@ -333,20 +340,20 @@ if __name__ == '__main__':
     movie = moviesDict[moviesDict.keys()[0]]
     decade = 1930
 
-    print '*****************************'
-    print 'Computing probability for {}'.format(movie['title'])
-    probability = computeProbabilityForDecadeAndWordMap(decade, movie['word_map'])
-    print '{}: {}'.format(decade, probability)
+    # print '*****************************'
+    # print 'Computing probability for {}'.format(movie['title'])
+    # probability = computeProbabilityForDecadeAndWordMap(decade, movie['word_map'])
+    # print '{}: {}'.format(decade, probability)
 
 
 
-    # for movie in moviesDict.itervalues():
-    #     print '*****************************'
-    #     print 'Computing probabilities for {}'.format(movie['title'])
+    for movie in moviesDict.itervalues():
+        print '*****************************'
+        print 'Computing probabilities for {}'.format(movie['title'])
 
-    #     for decade in decades:
-    #         probability = computeProbabilityForDecadeAndWordMap(decade, movie['word_map'])
-    #         print '{}: {}'.format(decade, probability)
+        for decade in decades:
+            probability = computeProbabilityForDecadeAndWordMap(decade, movie['word_map'])
+            print '{}: {}'.format(decade, probability)
 
 
 
