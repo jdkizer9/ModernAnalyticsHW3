@@ -129,6 +129,8 @@ def generateProbabilityFunctionForData(dataset):
     #note that if the word didnt exist in the original bag of words we 
     #return very high probability for xi=0, otherwise very small probability
 
+
+
     def probabilityFunction(wi, xi):
         if wi in bagOfWords:
             if xi in bagOfWords[wi]:
@@ -268,14 +270,33 @@ if __name__ == '__main__':
     # plots.plotDecadeHistogram([x["year"] for x in filter(lambda x: 'the' in x['word_map'], all_movies)], 1930, 2010, 'plot2D.png', 'Histogram of P(Y|Xthe > 0)', 'Decade', 'Probability')
 
     #generate balanced dataset
-    decades = [1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010]
-    balanced_movies = []
-    for decade in decades:
-        decade_data = [movie for movie in all_movies if movie['year']==decade]
-        if(len(decade_data) < 6000):
-            print 'Decade {} contains fewer than 6000 movies'.format(decade)
-        decade_subset = random.sample(decade_data, 6000)
-        balanced_movies.extend(decade_subset)
+
+    def generateTrainingAndTestData(movieData):
+        decades = [1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010]
+        #balanced_movies = []
+        trainingSet = []
+        testSet = []
+
+        for decade in decades:
+            decade_data = [movie for movie in movieData if movie['year']==decade]
+            if(len(decade_data) < 6000):
+                print 'Decade {} contains fewer than 6000 movies'.format(decade)
+            decade_subset = random.sample(decade_data, 60)
+            balanced_movies.extend(decade_subset)
+            balanced_movies_train = random.sample(decade_subset,48)
+            balanced_movies_test = [movie for movie in decade_subset if movie not in balanced_movies_train]
+            train_x.append( [movie['summary'] for movie in balanced_movies_train])
+            test_x.append( [movie['summary'] for movie in balanced_movies_test])
+            train_y.append( [movie['year'] for movie in balanced_movies_train])
+            test_y.append( [movie['year'] for movie in balanced_movies_test])
+
+        return (balanced_movies, trainingSet, testSet, train_x, test_x, train_y, test_y)
+
+
+    ret = generateTrainingAndTestData(all_movies)
+    balanced_movies = ret[0]
+    trainingSet = ret[1]
+    testSet = ret[2]
 
     # print 'The balanced data contains {} movies'.format(len(balanced_movies)) 
     
@@ -293,12 +314,11 @@ if __name__ == '__main__':
     #returns f(wi, xi)
     probabilityFunctionForDecade = {}
     for decade in decades:
-        movies_for_decade = filter(lambda x : x["year"] == decade, balanced_movies)
+        movies_for_decade = filter(lambda x : x["year"] == decade, trainingSet)
         probabilityFunctionForDecade[decade] = generateProbabilityFunctionForData(movies_for_decade)
 
-
     bagOfWordsList = []
-    for movie in balanced_movies:
+    for movie in trainingSet:
         bagOfWordsList.extend(movie['word_map'].keys())
 
     #this is the bag of words for the balanced set of movies
@@ -321,6 +341,7 @@ if __name__ == '__main__':
 
     def computeProbabilityForDecadeAndWordMap(decade, word_map):
 
+        print 'creating feature vector'
         featureVector = createFeatureVectorFromWordMap(word_map)
         probabilityFunction = probabilityFunctionForDecade[decade]
 
@@ -346,14 +367,29 @@ if __name__ == '__main__':
     # print '{}: {}'.format(decade, probability)
 
 
-
+    probabilities = {}
     for movie in moviesDict.itervalues():
         print '*****************************'
         print 'Computing probabilities for {}'.format(movie['title'])
 
+        probabilities[movie['title']] = []
+
         for decade in decades:
             probability = computeProbabilityForDecadeAndWordMap(decade, movie['word_map'])
+
             print '{}: {}'.format(decade, probability)
+            probabilities[movie['title']].append(probability)
+
+    
+
+
+
+
+
+
+
+
+
 
 
 
